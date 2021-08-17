@@ -1,11 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NeuralNetworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NeuralNetworks.Tests
 {
@@ -44,7 +41,7 @@ namespace NeuralNetworks.Tests
          for (int i = 0; i < outputs.Length; i++)
          {
             var row = NeuralNetwork.GetRow(inputs, i);
-            var res = neuralNetwork.FeedForward(row).Output;
+            var res = neuralNetwork.Predict(row).Output;
             results.Add(res);
          }
 
@@ -57,52 +54,46 @@ namespace NeuralNetworks.Tests
       }
 
       [TestMethod()]
-      public void DatasetTest()
+      public void RecognizeImages()
       {
-         var outputs = new List<double>();
-         var inputs = new List<double[]>();
-         using(var sr = new StreamReader("heart.csv"))
-         {
-            var header = sr.ReadLine();
+         var size = 500;
+         var parasitizedPath = @"F:\c#\cell_images\Parasitized\";
+         var unparasitizedPath = @"F:\c#\cell_images\Uninfected\";
 
-            while(!sr.EndOfStream)
-            {
-               var row = sr.ReadLine();
-               var values = row.Split(',').Select(v => Convert.ToDouble(v.Replace(".", ","))).ToList();
-               var output = values.Last();
-               var input = values.Take(values.Count - 1).ToArray();
+         var converter = new PictureConverter();
+         var testParasitizedImageInput = converter.Convert(@"F:\c#\NeuralNetworks\NeuralNetworksTests1\images\Parasitized.png");
+         var testUnparasitizedImageInput = converter.Convert(@"F:\c#\NeuralNetworks\NeuralNetworksTests1\images\Unparasitized.png");
 
-               outputs.Add(output);
-               inputs.Add(input);
-            }
-         }
-
-         var inputSignals = new double[inputs.Count, inputs[0].Length];
-         for (int i = 0; i < inputSignals.GetLength(0); i++)
-         {
-            for (int j = 0; j < inputSignals.GetLength(1); j++)
-            {
-               inputSignals[i, j] = inputs[i][j];
-            }
-         }
-
-         var topology = new Topology(outputs.Count, 1, 0.1, outputs.Count / 2);
+         var topology = new Topology(testParasitizedImageInput.Length, 1, 0.1, testParasitizedImageInput.Length / 2);
          var neuralNetwork = new NeuralNetwork(topology);
-         var difference = neuralNetwork.Learn(outputs.ToArray(), inputSignals, 100);
 
-         var results = new List<double>();
-         for (int i = 0; i < outputs.Count; i++)
+         double[,] parasitizedInputs = GetData(parasitizedPath, converter, testParasitizedImageInput, size);
+         neuralNetwork.Learn(new double[] { 1.0 }, parasitizedInputs, 1);
+
+         double[,] unparasitizedInputs = GetData(unparasitizedPath, converter, testParasitizedImageInput, size);
+         neuralNetwork.Learn(new double[] { 0.0 }, unparasitizedInputs, 1);
+
+         var par = neuralNetwork.Predict(testParasitizedImageInput.Select(t => (double)t).ToArray());
+         var unpar = neuralNetwork.Predict(testUnparasitizedImageInput.Select(t => (double)t).ToArray());
+
+         Assert.AreEqual(1, Math.Round(par.Output, 2));
+         Assert.AreEqual(0, Math.Round(unpar.Output, 2));
+      }
+
+      private static double[,] GetData(string parasitizedPath, PictureConverter converter, double[] testImageInput, int size)
+      {
+         var images = Directory.GetFiles(parasitizedPath);
+         var result = new double[size, testImageInput.Length];
+         for (int i = 0; i < size; i++)
          {
-            var res = neuralNetwork.FeedForward(inputs[i]).Output;
-            results.Add(res);
+            var image = converter.Convert(images[i]);
+            for (int j = 0; j < image.Length; j++)
+            {
+               result[i, j] = image[j];
+            }
          }
 
-         for (int i = 0; i < results.Count; i++)
-         {
-            var expected = Math.Round(outputs[i], 2);
-            var actual = Math.Round(results[i], 2);
-            Assert.AreEqual(expected, actual);
-         }
+         return result;
       }
    }
 }

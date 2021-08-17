@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NeuralNetworks
 {
@@ -13,25 +10,27 @@ namespace NeuralNetworks
       public int Height { get; set; }
       public int Width { get; set; }
 
-      public List<int> Convert(string path)
+      public double[] Convert(string path)
       {
-         var result = new List<int>();
+         var result = new List<double>();
 
          var image = new Bitmap(path);
-         Height = image.Height;
-         Width = image.Width;
+         var resizeImage = new Bitmap(image, new Size(20, 20));
+         Height = resizeImage.Height;
+         Width = resizeImage.Width;
 
-         for (int y = 0; y < image.Height; y++)
+         for (int y = 0; y < resizeImage.Height; y++)
          {
-            for (int x = 0; x < image.Width; x++)
+            for (int x = 0; x < resizeImage.Width; x++)
             {
-               var pixel = image.GetPixel(x, y);
-               var value = System.Convert.ToInt32(Brightness(pixel));
+
+               var pixel = resizeImage.GetPixel(x, y);
+               var value = (int)(Brightness(pixel));
                result.Add(value);
             }
          }         
 
-         return result;
+         return result.ToArray();
       }
 
       private double Brightness(Color pixel)

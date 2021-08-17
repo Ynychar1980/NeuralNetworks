@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NeuralNetworks
 {
@@ -69,7 +67,7 @@ namespace NeuralNetworks
          Layers.Add(inputLayer);
       }
 
-      public Neuron FeedForward(params double[] inputSignals)
+      public Neuron Predict(params double[] inputSignals)
       {
          SendSignalsToInputNeurons(inputSignals);
          FeedForwardAllLayersAfterInput();
@@ -120,7 +118,7 @@ namespace NeuralNetworks
 
       private double Backpropagation(double expected, params double[] inputs)
       {
-         var actual = FeedForward(inputs).Output;
+         var actual = Predict(inputs).Output;
          var difference = actual - expected;
 
          foreach (var neuron in Layers.Last().Neurons)
